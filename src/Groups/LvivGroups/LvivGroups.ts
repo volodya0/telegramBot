@@ -1,4 +1,4 @@
-import { Day } from "../../common";
+import { Day } from "../../Common";
 import { CityGroupsScheduleBase, Status as GroupStatus } from "../Groups";
 
 export enum Group {
@@ -18,7 +18,7 @@ class DaysSchedule {
 
     getStatus(group: Group, period: number): GroupStatus {
         const groupStartStatus = this.groupsStartStatus[group];
-        const groupStatusForPeriod = (groupStartStatus * (period + 1)) % 3;
+        const groupStatusForPeriod = (groupStartStatus + period) % 3;
 
         return groupStatusForPeriod;
     }
@@ -32,14 +32,14 @@ export class LvivGroups implements CityGroupsScheduleBase {
         this.init();
     }
 
-    GetStatus(day: Day, group: Group, period: number): GroupStatus {
+    public GetStatus(day: Day, group: Group, period: number): GroupStatus {
         const daySchedule = this.schedules[day];
         const result = daySchedule.getStatus(group, period);
 
         return result;
     }
 
-    init() {
+    private init() {
         const daysSchedule1 = new DaysSchedule([
             GroupStatus.Red,
             GroupStatus.Green,
