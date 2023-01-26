@@ -2,10 +2,16 @@ import { Scenes, session, Telegraf, Telegram } from "telegraf";
 import { MainScene } from "./Scenes/MainScene";
 import { ScenesEnum } from "./Common";
 import { LightScheduleScene } from "./Scenes/LigthSchedule";
-import { BotToken } from "./Config";
 
 // const telegram: Telegram = new Telegram(BotToken);
-const bot: Telegraf<Scenes.SceneContext> = new Telegraf(BotToken);
+
+const token = process.env.BotToken;
+
+if(typeof token !== 'string'){
+    throw new Error("");
+}
+    
+const bot: Telegraf<Scenes.SceneContext> = new Telegraf(token);
 
 const stage = new Scenes.Stage<Scenes.SceneContext>([
     /*  MainScene, */
