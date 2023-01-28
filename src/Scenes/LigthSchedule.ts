@@ -69,10 +69,11 @@ class LightScheduleSceneServices {
     private getFormattedPeriodInfo(
         { start, end, day }: PeriodInfo // alignDayName: boolean = false
     ) {
-        return `${Day[day]}, ${DigitsToIconsString(
-            start,
-            2
-        )} - ${DigitsToIconsString(end, 2)}`;
+        return `${Day[day]}, ${FillCharacters(
+            start.toString(),
+            2,
+            "0"
+        )}:00 - ${FillCharacters(end.toString(), 2, "0")}:00`;
     }
 
     private getStatusDescription(status: Status) {
@@ -111,6 +112,10 @@ LightScheduleScene.hears("Back to main", (ctx) => {
     ctx.scene.enter(ScenesEnum.MainScene);
 });
 
+/* LightScheduleScene.hears("Settings", (ctx) => {
+    ctx.scene.enter(ScenesEnum.LightScheduleSettingsScene);
+}); */
+
 LightScheduleScene.hears("Current state", (ctx) => {
     ctx.reply(
         `${services.GetCurrentState()}\nChose group to see detailed info`,
@@ -145,8 +150,6 @@ LightScheduleScene.hears(services.GroupLabels[2], (ctx) => {
     );
 });
 
-LightScheduleScene.on("message", (ctx) => {});
-
 const keyboard = Markup.keyboard([
     [
         Markup.button.callback(services.GroupLabels[0], "0"),
@@ -154,5 +157,5 @@ const keyboard = Markup.keyboard([
         Markup.button.callback(services.GroupLabels[2], "2"),
     ],
     [Markup.button.callback("Current state", "Current state")],
-    // [Markup.button.callback("Back to main", "Back to main")],
+    /*   [Markup.button.callback("Settings", "Settings")], */
 ]);

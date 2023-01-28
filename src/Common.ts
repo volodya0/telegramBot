@@ -8,23 +8,15 @@ export enum Day {
     Saturday,
 }
 
-export const SecondsPerDay = 86_400;
-
-export function GetCurrentDay(): Day {
-    const date = new Date(Date.now());
-    return date.getDay();
-}
-
-export function GetCurrentTimeSeconds() {
-    const now = new Date();
-    const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const seconds = (now.getTime() - (midnight.getTime() - 360_000)) / 1000;
-    return seconds;
-}
-
 export enum ScenesEnum {
     MainScene = "Main",
     LightScheduleScene = "LightSchedule",
+    LightScheduleSettingsScene = "LightScheduleSceneSettings",
+}
+
+export function GetCurrentDay(): Day {
+    const date = new Date(Date.now());
+    return date.getDay() % 7;
 }
 
 export const digitIcons = [
@@ -57,7 +49,7 @@ export function FillCharacters(
     string: string,
     minLength: number,
     filler: string,
-    addToEnd: boolean = true
+    addToEnd?: boolean
 ) {
     let result = string;
 

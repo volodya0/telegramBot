@@ -1,4 +1,4 @@
-import { Day, GetCurrentDay, SecondsPerDay } from "../Common";
+import { Day, GetCurrentDay } from "../Common";
 
 export enum Status {
     Green,
@@ -59,7 +59,7 @@ export class GroupsSchedule {
 
         for (let i = 0; i < count; i++) {
             const period = (currentPeriod + i) % 6;
-            const day = currentDay + Math.trunc((currentPeriod + i) / 6);
+            const day = (currentDay + Math.trunc((currentPeriod + i) / 6)) % 7;
 
             const status = this.GetGroupStatus(group, day, period);
             const periodInfo = this.GetPeriodInfo(period, day);

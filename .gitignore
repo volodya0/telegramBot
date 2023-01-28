@@ -104,3 +104,4 @@ dist
 .tern-port
 
 src/Config.ts
+.DS_Store

@@ -58,6 +58,7 @@ export class LvivGroups implements CityGroupsScheduleBase {
             GroupStatus.Green,
         ]);
 
+        this.schedules[Day.Sunday] = daysSchedule1;
         this.schedules[Day.Monday] = daysSchedule1;
         this.schedules[Day.Tuesday] = daysSchedule2;
         this.schedules[Day.Wednesday] = daysSchedule3;
