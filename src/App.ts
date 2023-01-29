@@ -33,6 +33,25 @@ class C<S extends Record<string, any> = {}> {
         data.UpdateStatistic();
     }
 
+    public AddUserUpdate() {
+        const u = this.ctx.update as any;
+        const from = u.message?.from ?? u.callback_query?.from;
+
+        if (!from) {
+            return;
+        }
+
+        const update = {
+            type: u.updateType,
+            username: from.username,
+            first_name: from.first_name,
+            message_text: u.message?.text,
+            callbac_data: u.callback_query?.data,
+        };
+
+        data.AddUserUpdate(this.userId, JSON.stringify(update));
+    }
+
     public SubscribeToScheduleUpdates(timeVariant: string) {
         data.SetSettings(
             this.userId,
@@ -58,7 +77,10 @@ const stage = new Scenes.Stage<Scenes.SceneContext>([
 
 bot.use((ctx, next) => {
     ctx.c.ctx = ctx;
+
     ctx.c.UpdateStatistic();
+    ctx.c.AddUserUpdate();
+
     next();
 });
 bot.use(session());
@@ -69,6 +91,10 @@ bot.start((ctx) => {
 });
 
 bot.on("message", (ctx) => {
+    ctx.scene.enter(ScenesEnum.LightScheduleScene);
+});
+
+bot.on("callback_query", (ctx) => {
     ctx.scene.enter(ScenesEnum.LightScheduleScene);
 });
 
