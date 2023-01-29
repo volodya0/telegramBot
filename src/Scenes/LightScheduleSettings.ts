@@ -60,6 +60,8 @@ LightScheduleSceneSettings.on("message", (ctx, next) => {
     ctx.c.SubscribeToScheduleUpdates(message);
 
     ctx.reply("Done", keyboard);
+
+    return;
 });
 
 LightScheduleSceneSettings.hears("Back to schedule", (ctx) => {

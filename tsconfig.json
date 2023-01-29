@@ -3,7 +3,7 @@
       "module": "commonjs",
       "esModuleInterop": true,
       "noImplicitReturns": true,
-      "noUnusedLocals": true,
+      "noUnusedLocals": false,
       "sourceMap": true,
       "strict": true,
       "target": "es2021",
@@ -11,7 +11,7 @@
       "lib": ["es2021"],
       "skipLibCheck": true,
       "rootDir": "src",
-      "outDir": "dist"
+      "outDir": "lib"
     },
     "compileOnSave": true,
     "include": [

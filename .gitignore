@@ -82,6 +82,7 @@ typings/
 # Nuxt.js build / generate output
 .nuxt
 dist
+lib
 
 # Gatsby files
 .cache/
@@ -105,4 +106,5 @@ dist
 .tern-port
 
 src/Config.ts
+Config.ts
 .DS_Store

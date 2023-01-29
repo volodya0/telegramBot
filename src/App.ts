@@ -2,24 +2,17 @@ import { Scenes, session, Telegraf } from "telegraf";
 import { ScenesEnum } from "./Common";
 import { LightScheduleScene } from "./Scenes/LigthSchedule";
 import { Data, Setting } from "./Data";
-import { LightScheduleSceneSettings } from "./Scenes/LightScheduleSettings";
-import { BotToken } from "./Config";
+import { isProduction, ProdBotToken, TestBotToken } from "./Config";
 
 export type IContext = Scenes.SceneContext & {
     c: C;
 };
-
-if (typeof BotToken !== "string") {
-    throw new Error("");
-}
 
 const data = new Data();
 (async () => data.asyncInit())();
 
 class C {
     public ctx: Scenes.SceneContext = {} as any;
-
-    private data = data;
 
     get userId() {
         return this.ctx.message?.from.id as number;
@@ -31,16 +24,16 @@ class C {
 
     get state() {
         const id = this.userId;
-        const db = this.data as Data;
+        const db = data as Data;
         return db.GetState(id);
     }
 
     public UpdateStatistic() {
-        this.data.UpdateStatistic();
+        data.UpdateStatistic();
     }
 
     public SubscribeToScheduleUpdates(timeVariant: string) {
-        this.data.SetSettings(
+        data.SetSettings(
             this.userId,
             Setting.lightScheduleSubscribeTimeVariant,
             timeVariant
@@ -48,7 +41,9 @@ class C {
     }
 }
 
-const bot: Telegraf<IContext> = new Telegraf(BotToken);
+const bot = new Telegraf<IContext>(isProduction ? ProdBotToken : TestBotToken, {
+    telegram: { webhookReply: true },
+});
 bot.context.c = new C();
 
 const stage = new Scenes.Stage<Scenes.SceneContext>([
@@ -77,8 +72,12 @@ bot.catch((err, ctx) => {
     ctx.scene.enter(ScenesEnum.LightScheduleScene);
 });
 
-bot.launch();
-
 // Enable graceful stop
 process.once("SIGINT", () => bot.stop("SIGINT"));
 process.once("SIGTERM", () => bot.stop("SIGTERM"));
+
+if (!isProduction) {
+    bot.launch();
+}
+
+export default bot;
