@@ -1,8 +1,8 @@
-import functions from "firebase-functions";
+import * as functions from "firebase-functions";
 import bot from "./App";
 
 // handle all telegram updates with HTTPs trigger
-exports.echoBot = functions.https.onRequest(
+exports.telegramBot = functions.https.onRequest(
     async (request: any, response: any) => {
         functions.logger.log("Incoming message", request.body);
         return await bot
