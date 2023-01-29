@@ -8,36 +8,89 @@ import {
 } from "../Common";
 import {
     GroupsSchedule,
-    PeriodInfo,
+    Period,
     Status,
     StatusForPeriod,
 } from "../Groups/Groups";
 import { LvivGroups } from "../Groups/LvivGroups/LvivGroups";
+import { MyContext as CtxBase } from "../App";
 
-class LightScheduleSceneServices {
+enum Action {
+    CurrentState,
+    DetailedStateFirst,
+    DetailedStateSecond,
+    DetailedStateThird,
+    NextPeriod,
+    PrevPeriod,
+    Back,
+    ToDetailedView,
+    ToPeriodsView,
+}
+
+class Services {
     private groupsSchedule = new GroupsSchedule(new LvivGroups());
+    private groupsCount: number = 3;
 
-    public GroupLabels = [
-        "group " + DigitsToIconsString(1),
-        "group " + DigitsToIconsString(2),
-        "group " + DigitsToIconsString(3),
-    ];
+    public GetGroupLabel(group: number, prefix?: boolean) {
+        return prefix
+            ? "group " + DigitsToIconsString(group + 1)
+            : DigitsToIconsString(group + 1);
+    }
 
-    public GetCurrentState() {
+    public GetNextPeriod(period: Period) {
+        return this.groupsSchedule.GetNearPeriod(period, 1);
+    }
+
+    public GetPrevPeriod(period: Period) {
+        return this.groupsSchedule.GetNearPeriod(period, -1);
+    }
+
+    public GetCurrentPeriod() {
         const currentDay = GetCurrentDay();
         const currentPeriod = this.groupsSchedule.GetCurrentPeriod();
+        const periodInfo = this.groupsSchedule.GetPeriod(
+            currentPeriod,
+            currentDay
+        );
 
-        let result = `Current state (${this.getFormattedPeriodInfo(
-            this.groupsSchedule.GetPeriodInfo(currentPeriod, currentDay)
-        )}):\n\n`;
+        return periodInfo;
+    }
 
-        this.groupsSchedule
-            .GetCurrentGroupsStatus()
-            .forEach(({ status }, i) => {
-                result += `${this.GroupLabels[i]} - ${this.getStatusDescription(
-                    status
-                )}\n`;
-            });
+    public GetStateForPeriod(period: Period): StatusForPeriod[] {
+        const result = [];
+
+        for (let i = 0; i < this.groupsCount; i++) {
+            result.push(this.groupsSchedule.GetGroupStatusForPeriod(i, period));
+        }
+
+        return result;
+    }
+
+    public GetFormattedStateForPeriod(period: Period) {
+        const statusForPeriods = this.GetStateForPeriod(period);
+        const currentPeriod = this.GetCurrentPeriod();
+
+        let result = "";
+        if (
+            currentPeriod.day === period.day &&
+            currentPeriod.periodNumber === period.periodNumber
+        ) {
+            result +=
+                "Current state (" +
+                this.getFormattedPeriodInfo(period) +
+                ") :\n\n";
+        } else {
+            result +=
+                "State for " + this.getFormattedPeriodInfo(period) + " :\n\n";
+        }
+
+        statusForPeriods.forEach((statusForPeriod, i) => {
+            result +=
+                this.GetGroupLabel(i, true) +
+                " -> " +
+                this.getStatusDescription(statusForPeriod.status) +
+                "\n";
+        });
 
         return result;
     }
@@ -46,9 +99,11 @@ class LightScheduleSceneServices {
         let result = "";
 
         this.groupsSchedule
-            .GetFutureGroupStatuses(group, 8)
+            .GetFutureGroupStatuses(group, 10)
             .forEach((statusForPeriod, i) => {
-                result += `${this.getFormattedPeriodStatus(statusForPeriod)}`;
+                result += `${this.getFormattedStatusForPeriod(
+                    statusForPeriod
+                )}`;
 
                 if (!i) {
                     result += " (now)";
@@ -60,14 +115,14 @@ class LightScheduleSceneServices {
         return result;
     }
 
-    private getFormattedPeriodStatus({ status, periodInfo }: StatusForPeriod) {
+    private getFormattedStatusForPeriod({ status, period }: StatusForPeriod) {
         return `${this.getFormattedPeriodInfo(
-            periodInfo
+            period
         )} -> ${this.getStatusDescription(status)}`;
     }
 
     private getFormattedPeriodInfo(
-        { start, end, day }: PeriodInfo // alignDayName: boolean = false
+        { startTime: start, endTime: end, day }: Period // alignDayName: boolean = false
     ) {
         return `${Day[day]}, ${FillCharacters(
             start.toString(),
@@ -95,67 +150,137 @@ class LightScheduleSceneServices {
         return `${emoji} ${Status[status]}`;
     }
 }
-const services = new LightScheduleSceneServices();
+const services = new Services();
 
-export const LightScheduleScene = new Scenes.BaseScene<Scenes.SceneContext>(
+type Ctx = CtxBase<{
+    selectedPeriod: Period;
+    selectedGroup?: number;
+    isDetailedView: boolean;
+}>;
+export const LightScheduleScene = new Scenes.BaseScene<Ctx>(
     ScenesEnum.LightScheduleScene
 );
 
+function replySelectedPeriodInfo(ctx: Ctx) {
+    ctx.reply(
+        `${services.GetFormattedStateForPeriod(
+            ctx.c.state.selectedPeriod
+        )}\n\n`,
+        keyboard
+    );
+}
+
+function replyDetailedInfo(ctx: Ctx) {
+    const group = (((ctx.c.state.selectedGroup ?? 0) % 3) + 3) % 3;
+
+    ctx.reply(
+        `Detailed state for ${services.GetGroupLabel(
+            group,
+            true
+        )}:\n\n${services.GetDetailedInfo(group)}`,
+        groupsKeyboard
+    );
+}
+
 LightScheduleScene.enter((ctx) => {
-    ctx.reply(
-        `${services.GetCurrentState()}\nChose group to see detailed info`,
-        keyboard
+    ctx.c.state.selectedPeriod = services.GetCurrentPeriod();
+    ctx.c.state.isDetailedView = false;
+
+    replySelectedPeriodInfo(ctx);
+});
+
+LightScheduleScene.action(Action[Action.Back], (ctx) => {
+    ctx.scene.enter(ScenesEnum.LightScheduleScene);
+    ctx.answerCbQuery();
+});
+
+LightScheduleScene.action(Action[Action.ToDetailedView], (ctx) => {
+    ctx.c.state.isDetailedView = true;
+    ctx.reply(`Select group`, groupsKeyboard);
+    ctx.answerCbQuery();
+});
+
+LightScheduleScene.action(Action[Action.ToPeriodsView], (ctx) => {
+    ctx.c.state.isDetailedView = false;
+    ctx.c.state.selectedPeriod = services.GetCurrentPeriod();
+    replySelectedPeriodInfo(ctx);
+    ctx.answerCbQuery();
+});
+
+LightScheduleScene.action(Action[Action.CurrentState], (ctx) => {
+    ctx.c.state.selectedPeriod = services.GetCurrentPeriod();
+
+    replySelectedPeriodInfo(ctx);
+    ctx.answerCbQuery();
+});
+
+LightScheduleScene.action(Action[Action.NextPeriod], (ctx) => {
+    ctx.c.state.selectedPeriod = services.GetNextPeriod(
+        ctx.c.state.selectedPeriod
     );
+
+    replySelectedPeriodInfo(ctx);
+    ctx.answerCbQuery();
 });
 
-LightScheduleScene.hears("Back to main", (ctx) => {
-    ctx.scene.enter(ScenesEnum.MainScene);
-});
-
-/* LightScheduleScene.hears("Settings", (ctx) => {
-    ctx.scene.enter(ScenesEnum.LightScheduleSettingsScene);
-}); */
-
-LightScheduleScene.hears("Current state", (ctx) => {
-    ctx.reply(
-        `${services.GetCurrentState()}\nChose group to see detailed info`,
-        keyboard
+LightScheduleScene.action(Action[Action.PrevPeriod], (ctx) => {
+    ctx.c.state.selectedPeriod = services.GetPrevPeriod(
+        ctx.c.state.selectedPeriod
     );
+
+    replySelectedPeriodInfo(ctx);
+    ctx.answerCbQuery();
 });
 
-LightScheduleScene.hears(services.GroupLabels[0], (ctx) => {
-    ctx.reply(
-        `Detailed state for ${
-            services.GroupLabels[0]
-        }:\n\n${services.GetDetailedInfo(0)}`,
-        keyboard
-    );
+LightScheduleScene.action(Action[Action.DetailedStateFirst], (ctx) => {
+    ctx.c.state.selectedGroup = 0;
+    replyDetailedInfo(ctx);
+    ctx.answerCbQuery();
 });
 
-LightScheduleScene.hears(services.GroupLabels[1], (ctx) => {
-    ctx.reply(
-        `Detailed state for ${
-            services.GroupLabels[1]
-        }:\n\n${services.GetDetailedInfo(1)}`,
-        keyboard
-    );
+LightScheduleScene.action(Action[Action.DetailedStateSecond], (ctx) => {
+    ctx.c.state.selectedGroup = 1;
+    replyDetailedInfo(ctx);
+    ctx.answerCbQuery();
 });
 
-LightScheduleScene.hears(services.GroupLabels[2], (ctx) => {
-    ctx.reply(
-        `Detailed state for ${
-            services.GroupLabels[2]
-        }:\n\n${services.GetDetailedInfo(2)}`,
-        keyboard
-    );
+LightScheduleScene.action(Action[Action.DetailedStateThird], (ctx) => {
+    ctx.c.state.selectedGroup = 2;
+    replyDetailedInfo(ctx);
+    ctx.answerCbQuery();
 });
 
-const keyboard = Markup.keyboard([
+const keyboard = Markup.inlineKeyboard([
     [
-        Markup.button.callback(services.GroupLabels[0], "0"),
-        Markup.button.callback(services.GroupLabels[1], "1"),
-        Markup.button.callback(services.GroupLabels[2], "2"),
+        Markup.button.callback("<- Prev Period", Action[Action.PrevPeriod]),
+        Markup.button.callback("Next period ->", Action[Action.NextPeriod]),
     ],
-    [Markup.button.callback("Current state", "Current state")],
-    /*   [Markup.button.callback("Settings", "Settings")], */
+    [Markup.button.callback("Current period", Action[Action.CurrentState])],
+    [Markup.button.callback("Detailed view", Action[Action.ToDetailedView])],
+]);
+
+const groupsKeyboard = Markup.inlineKeyboard([
+    /*     [
+        Markup.button.callback("<- Prev Period", Action[Action.PrevPeriod]),
+        Markup.button.callback("Next period ->", Action[Action.NextPeriod]),
+    ],
+ */
+    [
+        Markup.button.callback(
+            services.GetGroupLabel(0),
+            Action[Action.DetailedStateFirst]
+        ),
+
+        Markup.button.callback(
+            services.GetGroupLabel(1),
+            Action[Action.DetailedStateSecond]
+        ),
+
+        Markup.button.callback(
+            services.GetGroupLabel(2),
+            Action[Action.DetailedStateThird]
+        ),
+    ],
+
+    [Markup.button.callback("Periods view", Action[Action.ToPeriodsView])],
 ]);

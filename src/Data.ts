@@ -4,17 +4,12 @@ import firebase from "firebase";
 export enum Setting {
     lightScheduleSubscribeTimeVariant,
 }
-
-export interface StateRecord {
-    stage?: number;
-}
-
 interface UserSettingRecord {
     [Setting.lightScheduleSubscribeTimeVariant]?: string;
 }
 
 type UserSettings = Record<number, UserSettingRecord>;
-type State = Record<number, StateRecord>;
+type State = Record<number, any>;
 
 interface Statistic {
     messagesCount: number;
@@ -62,7 +57,7 @@ export class Data {
         return this.state[userId];
     }
 
-    public SetState(userId: number, state: Partial<StateRecord>) {
+    public SetState(userId: number, state: Record<string, any>) {
         if (!this.state[userId]) {
             this.state[userId] = {};
         }

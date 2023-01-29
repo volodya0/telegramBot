@@ -4,25 +4,26 @@ import { LightScheduleScene } from "./Scenes/LigthSchedule";
 import { Data, Setting } from "./Data";
 import { isProduction, ProdBotToken, TestBotToken } from "./Config";
 
-export type IContext = Scenes.SceneContext & {
-    c: C;
-};
+export type MyContext<S extends Record<string, any> = {}> =
+    Scenes.SceneContext & {
+        c: C<S>;
+    };
 
 const data = new Data();
 (async () => data.asyncInit())();
 
-class C {
+class C<S extends Record<string, any> = {}> {
     public ctx: Scenes.SceneContext = {} as any;
 
     get userId() {
-        return this.ctx.message?.from.id as number;
+        return (this.ctx as any).from?.id as number;
     }
 
     get message() {
         return (this.ctx.message as any)?.text as string;
     }
 
-    get state() {
+    get state(): S {
         const id = this.userId;
         const db = data as Data;
         return db.GetState(id);
@@ -41,14 +42,17 @@ class C {
     }
 }
 
-const bot = new Telegraf<IContext>(isProduction ? ProdBotToken : TestBotToken, {
-    telegram: { webhookReply: true },
-});
+const bot = new Telegraf<MyContext>(
+    isProduction ? ProdBotToken : TestBotToken,
+    {
+        telegram: { webhookReply: true },
+    }
+);
 bot.context.c = new C();
 
 const stage = new Scenes.Stage<Scenes.SceneContext>([
     /*  MainScene, */
-    LightScheduleScene,
+    LightScheduleScene as any,
     // LightScheduleSceneSettings as any,
 ]);
 

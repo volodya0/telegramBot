@@ -1,6 +1,6 @@
 import { Scenes, Markup } from "telegraf";
 import { ScenesEnum } from "../Common";
-import { IContext } from "../App";
+import { MyContext } from "../App";
 
 enum Stage {
     SelectTime,
@@ -31,9 +31,9 @@ class LightScheduleSceneSettingsServices {
 }
 const services = new LightScheduleSceneSettingsServices();
 
-export const LightScheduleSceneSettings = new Scenes.BaseScene<IContext>(
-    ScenesEnum.LightScheduleSettingsScene
-);
+export const LightScheduleSceneSettings = new Scenes.BaseScene<
+    MyContext<{ stage: Stage }>
+>(ScenesEnum.LightScheduleSettingsScene);
 
 LightScheduleSceneSettings.enter((ctx) => {
     ctx.reply(`Chose what do you want to setup`, keyboard);
