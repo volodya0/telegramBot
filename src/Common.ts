@@ -60,3 +60,15 @@ export function FillCharacters(
 
     return result;
 }
+
+export const Icon: Record<string, string> = {
+    back: "⬅️",
+    left: "◀️",
+    right: "▶️",
+    current: "⏳",
+    calendar: "🗓",
+    settings: "⚙️",
+    mail: "📩",
+    remove: "🚫",
+    clock: "🕑",
+};

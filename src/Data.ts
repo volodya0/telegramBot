@@ -33,6 +33,7 @@ export class Data {
     private userUpdates!: UserUpdates;
     private statistic!: Statistic;
     private state: State;
+    private refreshTimeout?: NodeJS.Timeout;
 
     constructor() {
         this.state = {};
@@ -111,11 +112,19 @@ export class Data {
     }
 
     public refreshFirebase() {
-        this.firebase.Set({
-            userSettings: this.userSettings,
-            userUpdates: this.userUpdates,
-            statistic: this.statistic,
-        });
+        if (this.refreshTimeout) {
+            clearTimeout(this.refreshTimeout);
+            this.refreshTimeout = undefined;
+        }
+
+        this.refreshTimeout = setTimeout(() => {
+            this.firebase.Set({
+                userSettings: this.userSettings,
+                userUpdates: this.userUpdates,
+                statistic: this.statistic,
+            });
+            this.refreshTimeout = undefined;
+        }, 2 * 60 * 1000);
     }
 }
 
