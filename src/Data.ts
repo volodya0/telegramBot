@@ -2,10 +2,10 @@ import { firebaseConfig } from "./Config";
 import firebase from "firebase";
 
 export enum Setting {
-    lightScheduleSubscribeTimeVariant,
+    lightScheduleSubscription,
 }
 interface UserSettingRecord {
-    [Setting.lightScheduleSubscribeTimeVariant]?: string;
+    [Setting.lightScheduleSubscription]?: any;
 }
 
 interface UserUpdatesRecord {
@@ -38,7 +38,7 @@ export class Data {
         this.state = {};
     }
 
-    public GetSettings(userId: number, setting: Setting) {
+    public GetSetting(userId: number, setting: Setting) {
         if (!this.userSettings[userId]) {
             this.userSettings[userId] = {};
         }
@@ -46,7 +46,11 @@ export class Data {
         return this.userSettings[userId][setting];
     }
 
-    public SetSettings(userId: number, setting: Setting, value: string) {
+    public GetAllSettings() {
+        return this.userSettings;
+    }
+
+    public SetSetting(userId: number, setting: Setting, value: any) {
         if (!this.userSettings[userId]) {
             this.userSettings[userId] = {};
         }
@@ -123,7 +127,8 @@ class Firebase {
     }
 
     public Set(data: DataBaseView) {
-        this.db.ref("data").set(data, function (error: string) {
+        const validData = this.deleteEmptyFields(data);
+        this.db.ref("data").set(validData, function (error: string) {
             if (error) {
                 console.log("Failed with error: " + error);
             } else {
@@ -139,5 +144,17 @@ class Firebase {
             .then(function (snapshot: DataBaseView) {
                 return snapshot;
             });
+    }
+
+    private deleteEmptyFields(obj: Record<string, any>) {
+        let newObj: Record<string, any> = {};
+
+        Object.keys(obj).forEach((key) => {
+            if (obj[key] === Object(obj[key]))
+                newObj[key] = this.deleteEmptyFields(obj[key]);
+            else if (obj[key] !== undefined) newObj[key] = obj[key];
+        });
+
+        return newObj;
     }
 }

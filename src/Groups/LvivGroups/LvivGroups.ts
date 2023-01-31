@@ -1,5 +1,5 @@
 import { Day } from "../../Common";
-import { CityGroupsScheduleBase, Status as GroupStatus } from "../Groups";
+import { CityGroupsScheduleBase, LightState as GroupStatus } from "../Groups";
 
 export enum Group {
     First,

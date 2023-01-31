@@ -1,6 +1,6 @@
 import { Day, GetCurrentDay } from "../Common";
 
-export enum Status {
+export enum LightState {
     Green,
     White,
     Red,
@@ -13,14 +13,14 @@ export interface Period {
     day: Day;
 }
 
-export interface StatusForPeriod {
+export interface LightStateForPeriod {
     period: Period;
-    status: Status;
+    lightState: LightState;
 }
 
 export interface CityGroupsScheduleBase {
     PeriodsCount: number;
-    GetStatus(day: Day, group: number, period: number): Status;
+    GetStatus(day: Day, group: number, period: number): LightState;
 }
 
 export class GroupsSchedule {
@@ -43,27 +43,30 @@ export class GroupsSchedule {
         return result;
     }
 
-    public GetGroupStatusForPeriod(group: number, period: Period) {
-        const status = this.cityGroupsSchedule.GetStatus(
+    public GetGroupStatusForPeriod(
+        group: number,
+        period: Period
+    ): LightStateForPeriod {
+        const lightState = this.cityGroupsSchedule.GetStatus(
             period.day,
             group,
             period.periodNumber
         );
 
-        return { status, period };
+        return { lightState, period };
     }
 
-    public GetCurrentGroupStatus(group: number): StatusForPeriod {
+    public GetCurrentGroupStatus(group: number): LightStateForPeriod {
         const currentDay = GetCurrentDay();
         const currentPeriod = this.GetCurrentPeriod();
         const status = this.GetGroupStatus(group, currentDay, currentPeriod);
         const period = this.GetPeriod(currentPeriod, currentDay);
 
-        return { status, period: period };
+        return { lightState: status, period: period };
     }
 
     public GetFutureGroupStatuses(group: number, count: number) {
-        const result: StatusForPeriod[] = [];
+        const result: LightStateForPeriod[] = [];
 
         let period = this.GetPeriod(this.GetCurrentPeriod(), GetCurrentDay());
 
@@ -104,7 +107,7 @@ export class GroupsSchedule {
         return result;
     }
 
-    public GetCurrentGroupsStatus(): StatusForPeriod[] {
+    public GetCurrentGroupsStatus(): LightStateForPeriod[] {
         const result = [
             this.GetCurrentGroupStatus(0),
             this.GetCurrentGroupStatus(1),
